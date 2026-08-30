@@ -1,166 +1,47 @@
+import os
 import sys
 import math
-import os
-import cv2
 import pygame
 
-pygame.init()
-pygame.mixer.init()
-
-# Visual Constants
-BOARD_WIDTH, BOARD_HEIGHT = 600, 600
-TOP_PANEL_HEIGHT = 80
-BOTTOM_PANEL_HEIGHT = 80
-TOTAL_WIDTH = BOARD_WIDTH  # 600px wide
-TOTAL_HEIGHT = TOP_PANEL_HEIGHT + BOARD_HEIGHT + BOTTOM_PANEL_HEIGHT  # 760px high
-
-# Frame Offset Adjustments
-BOARD_PADDING = 12
-PLAYABLE_WIDTH = BOARD_WIDTH - (BOARD_PADDING * 2)
-PLAYABLE_HEIGHT = BOARD_HEIGHT - (BOARD_PADDING * 2)
-
-ROWS, COLS = 8, 8
-SQUARE_SIZE_X = PLAYABLE_WIDTH / COLS
-SQUARE_SIZE_Y = PLAYABLE_HEIGHT / COLS
-
-# Game Settings: 5 Minutes Total Bank per Player
-INITIAL_TIME_LIMIT = 300  
-
-# Colors
-RED = (200, 50, 50)
-BROWN = (120, 60, 20)  # Player 2 border & crown color
-WHITE = (245, 245, 245)
-BLACK = (30, 30, 30)
-BLUE = (50, 120, 200)
-GREEN = (40, 160, 60)
-HIGHLIGHT = (255, 255, 100)
-PANEL_BG = (45, 45, 45)
-TEXT_WHITE = (255, 255, 255)
-OVERLAY_BG = (0, 0, 0, 180)
-
-WIN = pygame.display.set_mode((TOTAL_WIDTH, TOTAL_HEIGHT))
-pygame.display.set_caption("Suicide Checkers - Custom Face Pieces")
-FONT_UI = pygame.font.SysFont("arial", 15, bold=True)
-FONT_TIMER = pygame.font.SysFont("arial", 18, bold=True)
-FONT_START_BTN = pygame.font.SysFont("arial", 22, bold=True)
-
-# Load Board Image
-BOARD_IMAGE_PATH = r"C:\Users\JULIUS\Documents\AMAD\res\783506429_1933456907335283_8118661620158224966_n.png"
-
-try:
-    raw_board_img = pygame.image.load(BOARD_IMAGE_PATH)
-    BOARD_IMG = pygame.transform.smoothscale(raw_board_img, (BOARD_WIDTH, BOARD_HEIGHT))
-except Exception as e:
-    print(f"Warning: Could not load board image ({e}).")
-    BOARD_IMG = None
-
-# --- LOAD AUDIO FILES ---
-BACKGROUND_MUSIC_PATH = r"C:\Users\JULIUS\Documents\AMAD\res\L's theme A.mp3"
-KILL_SINGLE_PATH = r"C:\Users\JULIUS\Documents\AMAD\res\faaah.mp3"
-KILL_DOUBLE_PATH = r"C:\Users\JULIUS\Documents\AMAD\res\announcer_kill_double_01.mp3"
-KILL_TRIPLE_PATH = r"C:\Users\JULIUS\Documents\AMAD\res\announcer_kill_triple_01.mp3"
-
-MUSIC_LOADED = False
-SOUND_SINGLE = None
-SOUND_DOUBLE = None
-SOUND_TRIPLE = None
-
-if os.path.exists(BACKGROUND_MUSIC_PATH):
-    try:
-        pygame.mixer.music.load(BACKGROUND_MUSIC_PATH)
-        MUSIC_LOADED = True
-    except Exception as e:
-        print(f"Warning: Could not load music ({e}).")
-
-if os.path.exists(KILL_SINGLE_PATH):
-    try:
-        SOUND_SINGLE = pygame.mixer.Sound(KILL_SINGLE_PATH)
-    except Exception as e:
-        print(f"Warning: Could not load single kill SFX ({e}).")
-
-if os.path.exists(KILL_DOUBLE_PATH):
-    try:
-        SOUND_DOUBLE = pygame.mixer.Sound(KILL_DOUBLE_PATH)
-    except Exception as e:
-        print(f"Warning: Could not load double kill SFX ({e}).")
-
-if os.path.exists(KILL_TRIPLE_PATH):
-    try:
-        SOUND_TRIPLE = pygame.mixer.Sound(KILL_TRIPLE_PATH)
-    except Exception as e:
-        print(f"Warning: Could not load triple kill SFX ({e}).")
-
-
-def capture_player_face(player_name, diameter):
-    """Opens webcam, crops face WITHOUT drawing boxes on the captured image."""
-    cap = cv2.VideoCapture(0)
-
-    try:
-        cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-        face_cascade = cv2.CascadeClassifier(cascade_path)
-    except Exception:
-        face_cascade = None
-
-    cropped_face_surface = None
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        frame = cv2.flip(frame, 1)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        faces = []
-        if face_cascade and not face_cascade.empty():
-            faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(100, 100))
-
-        display_frame = frame.copy()
-        cv2.putText(display_frame, f"{player_name}: Press SPACE to Snap Photo!", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-
-        cv2.imshow("Capture Player Face", display_frame)
-        key = cv2.waitKey(1) & 0xFF
-
-        if key == 32:
-            if len(faces) > 0:
-                x, y, w, h = faces[0]
-                face_img = frame[y:y+h, x:x+w]
-            else:
-                h_f, w_f, _ = frame.shape
-                sz = min(h_f, w_f)
-                cy, cx = h_f // 2, w_f // 2
-                face_img = frame[cy - sz//2: cy + sz//2, cx - sz//2: cx + sz//2]
-
-            face_img = cv2.resize(face_img, (diameter, diameter))
-            face_rgb = cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB)
-
-            raw_surface = pygame.image.frombuffer(face_rgb.tobytes(), (diameter, diameter), "RGB")
-
-            mask = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
-            pygame.draw.circle(mask, (255, 255, 255, 255), (diameter // 2, diameter // 2), diameter // 2)
-
-            cropped_face_surface = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
-            cropped_face_surface.blit(raw_surface, (0, 0))
-            cropped_face_surface.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
-    return cropped_face_surface
+from src.settings import (
+    BOARD_WIDTH, BOARD_HEIGHT, TOP_PANEL_HEIGHT, BOTTOM_PANEL_HEIGHT,
+    TOTAL_WIDTH, TOTAL_HEIGHT, BOARD_PADDING, PLAYABLE_WIDTH, PLAYABLE_HEIGHT,
+    ROWS, COLS, SQUARE_SIZE_X, SQUARE_SIZE_Y, INITIAL_TIME_LIMIT,
+    RED, BROWN, WHITE, BLACK, BLUE, GREEN, HIGHLIGHT, PANEL_BG, TEXT_WHITE,
+    OVERLAY_BG, GOLD,
+    WIN, FONT_UI, FONT_TIMER, FONT_START_BTN, FONT_POPUP_TITLE, FONT_POPUP_BTN,
+    BOARD_IMG, MUSIC_LOADED, SOUND_SINGLE, SOUND_DOUBLE, SOUND_TRIPLE, SOUND_CELEBRATE,
+    get_asset_path
+)
+from src.board import BoardManager
+from src.camera import capture_player_face
 
 
 class CheckersGameGUI:
     def __init__(self):
+        self.bm = BoardManager()
         self.p1_face_tex = None
         self.p2_face_tex = None
+        self.cat_img = None
+
+        # Load Laughing Cat Image for End-Game Popup
+        cat_img_path = get_asset_path("cat_laugh.png")
+        if os.path.exists(cat_img_path):
+            try:
+                self.cat_img = pygame.image.load(cat_img_path).convert_alpha()
+                self.cat_img = pygame.transform.smoothscale(self.cat_img, (110, 110))
+            except Exception as e:
+                print(f"Warning: Could not load cat image ({e})")
+
         self.reset_game()
 
     def reset_game(self):
         if pygame.mixer.music.get_busy():
             pygame.mixer.music.stop()
+        if SOUND_CELEBRATE:
+            SOUND_CELEBRATE.stop()
 
-        self.board = self.create_board()
+        self.bm.board = self.bm.create_board()
         self.turn = 1  # 1 = Red, 2 = White/Brown
         self.selected_piece = None
         self.valid_moves = []
@@ -170,9 +51,13 @@ class CheckersGameGUI:
 
         self.game_started = False
         self.music_playing = False
+        self.celebration_playing = False
 
         self.red_captures = []
         self.white_captures = []
+
+        self.popup_btn_new_game = None
+        self.popup_btn_exit_game = None
 
         self.player_clocks = {
             1: INITIAL_TIME_LIMIT * 1000,
@@ -181,18 +66,6 @@ class CheckersGameGUI:
         self.last_tick_time = pygame.time.get_ticks()
 
         self.update_legal_moves()
-
-    def create_board(self):
-        board = [[0] * 8 for _ in range(8)]
-        for r in range(3):
-            for c in range(8):
-                if (r + c) % 2 == 0:
-                    board[r][c] = 2
-        for r in range(5, 8):
-            for c in range(8):
-                if (r + c) % 2 == 0:
-                    board[r][c] = 1
-        return board
 
     def start_photo_capture(self):
         piece_diameter = int(SQUARE_SIZE_X - 16)
@@ -219,6 +92,15 @@ class CheckersGameGUI:
             if SOUND_TRIPLE:
                 SOUND_TRIPLE.play()
 
+    def play_celebration_sound(self):
+        """Starts the looping victory theme once, on the winning frame."""
+        if not self.celebration_playing and SOUND_CELEBRATE:
+            if pygame.mixer.music.get_busy():
+                pygame.mixer.music.stop()
+            SOUND_CELEBRATE.play(loops=-1)
+            self.celebration_playing = True
+            self.music_playing = False
+
     def update_audio_logic(self):
         if not MUSIC_LOADED or not self.game_started:
             return
@@ -226,10 +108,9 @@ class CheckersGameGUI:
         p1_under_1min = self.player_clocks[1] <= 60000
         p2_under_1min = self.player_clocks[2] <= 60000
 
-        both_under_1min = p1_under_1min and p2_under_1min
         current_turn_under_1min = (self.turn == 1 and p1_under_1min) or (self.turn == 2 and p2_under_1min)
 
-        should_play = both_under_1min or current_turn_under_1min
+        should_play = current_turn_under_1min
 
         if should_play:
             if not pygame.mixer.music.get_busy():
@@ -303,8 +184,8 @@ class CheckersGameGUI:
         r_timer_txt = FONT_TIMER.render(f"{r_time_str}", True, r_color)
         WIN.blit(r_timer_txt, (350, TOP_PANEL_HEIGHT + BOARD_HEIGHT + 25))
 
-        # New Game Button
-        self.btn_new_game = pygame.draw.rect(WIN, RED, (470, TOP_PANEL_HEIGHT + BOARD_HEIGHT + 20, 110, 35), border_radius=5)
+        # New Game Button (Bottom Panel)
+        self.btn_panel_new_game = pygame.draw.rect(WIN, RED, (470, TOP_PANEL_HEIGHT + BOARD_HEIGHT + 20, 110, 35), border_radius=5)
         ng_txt = FONT_UI.render("New Game", True, TEXT_WHITE)
         WIN.blit(ng_txt, (485, TOP_PANEL_HEIGHT + BOARD_HEIGHT + 29))
 
@@ -340,7 +221,7 @@ class CheckersGameGUI:
 
         for r in range(ROWS):
             for c in range(COLS):
-                piece = self.board[r][c]
+                piece = self.bm.board[r][c]
                 if piece != 0:
                     cx, cy = self.get_square_center(r, c)
                     radius = int(SQUARE_SIZE_X // 2 - 8)
@@ -403,20 +284,75 @@ class CheckersGameGUI:
             txt_rect = btn_txt.get_rect(center=self.btn_start.center)
             WIN.blit(btn_txt, txt_rect)
 
-    def is_player_piece(self, piece, player):
-        return (piece in (1, 3)) if player == 1 else (piece in (2, 4))
+    def draw_winner_popup(self, screen, winner_str=""):
+        screen_w, screen_h = screen.get_size()
 
+        # Overlay background
+        overlay = pygame.Surface((screen_w, screen_h), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 185))
+        screen.blit(overlay, (0, 0))
+
+        # Compact box dimensions
+        box_w, box_h = 440, 260
+        box_x = (screen_w - box_w) // 2
+        box_y = (screen_h - box_h) // 2
+
+        pygame.draw.rect(screen, (30, 30, 30), (box_x, box_y, box_w, box_h), border_radius=14)
+        pygame.draw.rect(screen, (255, 215, 0), (box_x, box_y, box_w, box_h), width=3, border_radius=14)
+
+        font_title = pygame.font.SysFont("arial", 24, bold=True)
+        font_sub = pygame.font.SysFont("arial", 15, bold=True)
+        font_sarcasm = pygame.font.SysFont("arial", 16, bold=True)
+
+        t_surf = font_title.render("CONGRATULATIONS!", True, (255, 215, 0))
+        s_surf = font_sub.render(winner_str, True, (245, 245, 245))
+        sarcasm_surf = font_sarcasm.render("You're so good at losing! Congrats!", True, (255, 120, 120))
+
+        screen.blit(t_surf, (box_x + (box_w - t_surf.get_width()) // 2, box_y + 16))
+        screen.blit(s_surf, (box_x + (box_w - s_surf.get_width()) // 2, box_y + 44))
+        screen.blit(sarcasm_surf, (box_x + (box_w - sarcasm_surf.get_width()) // 2, box_y + 66))
+
+        # Cat Image
+        if self.cat_img:
+            cat_x = box_x + (box_w - self.cat_img.get_width()) // 2
+            screen.blit(self.cat_img, (cat_x, box_y + 92))
+
+        # Popup Action Buttons (Closer together & higher up)
+        btn_w, btn_h = 140, 38
+        spacing = 16  # Gap between buttons
+        btn_y = box_y + 208  # Shifted higher up inside the popup
+
+        total_buttons_w = (btn_w * 2) + spacing
+        start_x = box_x + (box_w - total_buttons_w) // 2
+
+        self.popup_btn_new_game = pygame.Rect(start_x, btn_y, btn_w, btn_h)
+        self.popup_btn_exit_game = pygame.Rect(start_x + btn_w + spacing, btn_y, btn_w, btn_h)
+
+        mx, my = pygame.mouse.get_pos()
+        ng_color = (40, 167, 69) if self.popup_btn_new_game.collidepoint(mx, my) else (30, 126, 52)
+        ex_color = (220, 53, 69) if self.popup_btn_exit_game.collidepoint(mx, my) else (167, 29, 42)
+
+        pygame.draw.rect(screen, ng_color, self.popup_btn_new_game, border_radius=8)
+        pygame.draw.rect(screen, ex_color, self.popup_btn_exit_game, border_radius=8)
+
+        font_btn = pygame.font.SysFont("arial", 15, bold=True)
+        ng_lbl = font_btn.render("NEW GAME", True, (255, 255, 255))
+        ex_lbl = font_btn.render("EXIT GAME", True, (255, 255, 255))
+
+        screen.blit(ng_lbl, (self.popup_btn_new_game.x + (btn_w - ng_lbl.get_width()) // 2, self.popup_btn_new_game.y + 10))
+        screen.blit(ex_lbl, (self.popup_btn_exit_game.x + (btn_w - ex_lbl.get_width()) // 2, self.popup_btn_exit_game.y + 10))
+        
     def update_legal_moves(self):
         jumps, regular_moves = [], []
         if self.chain_piece:
             r, c = self.chain_piece
-            p_jumps, _ = self.get_piece_moves(r, c)
+            p_jumps, _ = self.bm.get_piece_moves(r, c)
             jumps.extend(p_jumps)
         else:
             for r in range(8):
                 for c in range(8):
-                    if self.is_player_piece(self.board[r][c], self.turn):
-                        p_jumps, p_moves = self.get_piece_moves(r, c)
+                    if self.bm.is_player_piece(self.bm.board[r][c], self.turn):
+                        p_jumps, p_moves = self.bm.get_piece_moves(r, c)
                         jumps.extend(p_jumps)
                         regular_moves.extend(p_moves)
 
@@ -425,66 +361,23 @@ class CheckersGameGUI:
         else:
             self.valid_moves, self.is_forced = regular_moves, False
 
-    def get_piece_moves(self, r, c):
-        piece = self.board[r][c]
-        player = 1 if piece in (1, 3) else 2
-        is_king = piece in (3, 4)
-
-        forward = -1 if player == 1 else 1
-        jumps, moves = [], []
-
-        all_dirs = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
-        forward_dirs = [(forward, -1), (forward, 1)]
-
-        if is_king:
-            for dr, dc in all_dirs:
-                mid_piece_pos = None
-                step = 1
-                while True:
-                    tr, tc = r + (dr * step), c + (dc * step)
-                    if not (0 <= tr < 8 and 0 <= tc < 8):
-                        break
-                    
-                    target_piece = self.board[tr][tc]
-
-                    if mid_piece_pos is None:
-                        if target_piece == 0:
-                            moves.append(((r, c), (tr, tc)))
-                        elif not self.is_player_piece(target_piece, player):
-                            mid_piece_pos = (tr, tc)
-                        else:
-                            break
-                    else:
-                        if target_piece == 0:
-                            jumps.append(((r, c), (tr, tc), mid_piece_pos))
-                        else:
-                            break
-                    step += 1
-        else:
-            for dr, dc in all_dirs:
-                mid_r, mid_c = r + dr, c + dc
-                land_r, land_c = r + (2 * dr), c + (2 * dc)
-                if 0 <= land_r < 8 and 0 <= land_c < 8:
-                    mid_piece = self.board[mid_r][mid_c]
-                    land_piece = self.board[land_r][land_c]
-                    if (
-                        mid_piece != 0
-                        and not self.is_player_piece(mid_piece, player)
-                        and land_piece == 0
-                    ):
-                        jumps.append(((r, c), (land_r, land_c), (mid_r, mid_c)))
-
-            for dr, dc in forward_dirs:
-                tr, tc = r + dr, c + dc
-                if 0 <= tr < 8 and 0 <= tc < 8 and self.board[tr][tc] == 0:
-                    moves.append(((r, c), (tr, tc)))
-
-        return jumps, moves
-
     def handle_click(self, pos):
         x, y = pos
 
-        if self.btn_new_game.collidepoint(pos):
+        # Check popup interactions if game is over
+        winner = self.check_winner()
+        if winner:
+            if self.popup_btn_new_game and self.popup_btn_new_game.collidepoint(pos):
+                self.reset_game()
+            elif self.popup_btn_exit_game and self.popup_btn_exit_game.collidepoint(pos):
+                if SOUND_CELEBRATE:
+                    SOUND_CELEBRATE.stop()
+                pygame.quit()
+                sys.exit()
+            return
+
+        # Check panel New Game button
+        if hasattr(self, 'btn_panel_new_game') and self.btn_panel_new_game.collidepoint(pos):
             self.reset_game()
             return
 
@@ -514,12 +407,12 @@ class CheckersGameGUI:
 
                 if move_found:
                     is_capture = len(move_found) == 3
-                    self.make_move(move_found)
+                    self.bm.make_move(move_found, self.turn, self.red_captures, self.white_captures)
                     land_pos = move_found[1]
 
                     if is_capture:
                         self.play_capture_sound()
-                        add_jumps, _ = self.get_piece_moves(land_pos[0], land_pos[1])
+                        add_jumps, _ = self.bm.get_piece_moves(land_pos[0], land_pos[1])
                         if add_jumps:
                             self.chain_piece = land_pos
                             self.selected_piece = land_pos
@@ -533,31 +426,9 @@ class CheckersGameGUI:
                     self.update_legal_moves()
                     return
 
-            if not self.chain_piece and self.is_player_piece(self.board[row][col], self.turn):
+            if not self.chain_piece and self.bm.is_player_piece(self.bm.board[row][col], self.turn):
                 if not self.is_forced or any(m[0] == (row, col) for m in self.valid_moves):
                     self.selected_piece = (row, col)
-
-    def make_move(self, move):
-        (r1, c1), (r2, c2) = move[0], move[1]
-        piece = self.board[r1][c1]
-
-        self.board[r1][c1] = 0
-        self.board[r2][c2] = piece
-
-        if len(move) == 3:
-            cr, cc = move[2]
-            captured = self.board[cr][cc]
-            self.board[cr][cc] = 0
-
-            if self.turn == 1:
-                self.red_captures.append(captured)
-            else:
-                self.white_captures.append(captured)
-
-        if piece == 1 and r2 == 0:
-            self.board[r2][c2] = 3
-        elif piece == 2 and r2 == 7:
-            self.board[r2][c2] = 4
 
     def check_winner(self):
         if self.player_clocks[1] <= 0:
@@ -565,8 +436,8 @@ class CheckersGameGUI:
         if self.player_clocks[2] <= 0:
             return "RED WINS! (BROWN ran out of time)"
 
-        p1_pieces = sum(row.count(1) + row.count(3) for row in self.board)
-        p2_pieces = sum(row.count(2) + row.count(4) for row in self.board)
+        p1_pieces = sum(row.count(1) + row.count(3) for row in self.bm.board)
+        p2_pieces = sum(row.count(2) + row.count(4) for row in self.bm.board)
 
         if p1_pieces == 0:
             return "RED WINS! (Ran out of pieces)"
@@ -577,48 +448,3 @@ class CheckersGameGUI:
             return f"{winner} WINS! (No legal moves left)"
 
         return None
-
-
-def main():
-    game = CheckersGameGUI()
-    clock = pygame.time.Clock()
-
-    while True:
-        clock.tick(60)
-
-        winner = game.check_winner()
-        if not winner:
-            game.update_timer()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                game.handle_click(pygame.mouse.get_pos())
-
-        game.draw_board()
-        game.draw_highlights()
-        game.draw_pieces()
-        game.draw_panels()
-        game.draw_start_overlay()
-
-        turn_str = "RED" if game.turn == 1 else "BROWN"
-        status_str = (
-            " | MULTI-TAKE!"
-            if game.chain_piece
-            else (" | FORCED JUMP!" if game.is_forced else "")
-        )
-
-        if winner:
-            pygame.display.set_caption(f"GAME OVER: {winner}")
-        elif not game.game_started:
-            pygame.display.set_caption("Suicide Checkers - Take Photos to Start")
-        else:
-            pygame.display.set_caption(f"Suicide Checkers - Turn: {turn_str}{status_str}")
-
-        pygame.display.flip()
-
-
-if __name__ == "__main__":
-    main()

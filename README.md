@@ -1,48 +1,55 @@
-# AMAD ♟️💥
+# AMAD (Misère Dama / Suicide Checkers) ♟️📸
 
-> **Lose to Win.** A Python-based Misère variant of traditional Dama (Checkers) where your ultimate goal is to get all your pieces captured first.
-
----
-
-## 📌 Overview
-
-**AMAD** flips classic board game strategy on its head. Based on traditional Dama (Turkish Drafts / Checkers), AMAD introduces an inverted win condition (Giveaway/Antidama style): the first player to have all their pieces captured—or to be completely stalemated with no valid moves—wins the game.
-
-Built with Python, this project features full rule implementation, forced-capture mechanics, and an interactive interface for gameplay.
+> A Python implementation of **AMAD** (Misère Dama) featuring webcam face tracking for custom piece textures and sound effects.
 
 ---
 
-## 🎮 Game Rules & Mechanics
+## 📌 Game Concept & Win Conditions
 
-1. **Objective:** Force your opponent to capture all of your pieces or lock your remaining pieces so you have no legal moves.
-2. **Forced Captures:** Just like classic Dama, if a capture move is available, you **must** take it. Use forced captures strategically to sacrifice your own pieces.
-3. **Movement:**
-   * **Men (Standard Pieces):** Move orthogonally (forward or sideways, no backward moves).
-   * **Kings (Promoted Pieces):** Promoted upon reaching the opposite back row; can move any number of empty squares orthogonally (Flying King rule).
-4. **Win Conditions:**
-   * You lose **all** your pieces → **YOU WIN!**
-   * You have **no legal moves** left on your turn → **YOU WIN!**
+In **AMAD**, your objective is inverted: **your goal is to lose all your pieces first**.
 
----
-
-## 🚀 Features
-
-* 🔄 **Inverted Logic Engine:** Full implementation of Giveaway/Misère Dama rulesets.
-* 🎯 **Forced-Capture Enforcement:** Automatically highlights and enforces compulsory capture routes.
-* 👑 **King Promotion System:** Dynamic board transformation when reaching the baseline.
-* 🖥️ **Interactive Interface:** Clean visual representation of the board and current state.
+* **Forced Captures:** If a jump is available on your turn, you **must** take it. Use this rule strategically to sacrifice your pieces.
+* **Win Conditions:**
+  1. **Lose All Pieces:** First player with zero pieces remaining on the board wins.
+  2. **No Legal Moves:** If a player has no valid moves left on their turn, they win.
+  3. **Time Out:** If a player's 5-minute timer hits zero, the opposing player wins.
 
 ---
 
-## 🛠️ Installation & Setup
+## 💻 Prerequisites & Requirements
 
-### Prerequisites
+Ensure you have **Python 3.8+** installed along with a working webcam.
 
-* **Python 3.8+** installed on your system.
+### Dependencies
+* `pygame` (Game rendering & audio loop)
+* `opencv-python` (Webcam video capture & face detection)
 
-### Steps
+---
 
-1. **Clone the repository:**
-   ```bash
+## 🚀 How to Run the Game
+
+### 1. Clone the Repository
+bash
    git clone [https://github.com/your-username/AMAD.git](https://github.com/your-username/AMAD.git)
    cd AMAD
+
+### 2. Set Up Virtual Environment (Recommended)
+Bash
+# Create environment
+   python -m venv venv
+
+# Activate on Windows PowerShell:
+   .\venv\Scripts\activate
+
+# Activate on macOS/Linux:
+   source venv/bin/activate
+
+### 3. Install Required Packages
+Bash
+pip install pygame opencv-python
+
+### 4. Start the Game
+Run the entry point file from the root folder:
+
+Bash
+   python main.py
